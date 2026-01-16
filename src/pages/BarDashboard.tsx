@@ -568,7 +568,8 @@ const BarDashboard = () => {
                   ) : coupons.length === 0 ? (
                     <p className="text-sm text-muted-foreground">{isRTL ? "אין קופונים עדיין." : "No coupons yet."}</p>
                   ) : (
-                    <Table>
+                    <div className="w-full overflow-x-auto">
+                      <Table className="min-w-[640px]">
                       <TableHeader>
                         <TableRow>
                           <TableHead>{isRTL ? "קוד" : "Code"}</TableHead>
@@ -619,7 +620,8 @@ const BarDashboard = () => {
                           </TableRow>
                         ))}
                       </TableBody>
-                    </Table>
+                      </Table>
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -713,7 +715,8 @@ const BarDashboard = () => {
                       {isRTL ? "אין האפי האוור עדיין." : "No happy hour schedules yet."}
                     </p>
                   ) : (
-                    <Table>
+                    <div className="w-full overflow-x-auto">
+                      <Table className="min-w-[560px]">
                       <TableHeader>
                         <TableRow>
                           <TableHead>{isRTL ? "ימים" : "Days"}</TableHead>
@@ -762,7 +765,8 @@ const BarDashboard = () => {
                           </TableRow>
                         ))}
                       </TableBody>
-                    </Table>
+                      </Table>
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -784,7 +788,8 @@ const BarDashboard = () => {
                       {isRTL ? "אין נתונים עדיין." : "No data yet."}
                     </p>
                   ) : (
-                    <Table>
+                    <div className="w-full overflow-x-auto">
+                      <Table className="min-w-[360px]">
                       <TableHeader>
                         <TableRow>
                           <TableHead>{isRTL ? "משחק" : "Game"}</TableHead>
@@ -799,7 +804,8 @@ const BarDashboard = () => {
                           </TableRow>
                         ))}
                       </TableBody>
-                    </Table>
+                      </Table>
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -817,7 +823,8 @@ const BarDashboard = () => {
                       {isRTL ? "אין כניסות עדיין." : "No entries yet."}
                     </p>
                   ) : (
-                    <Table>
+                    <div className="w-full overflow-x-auto">
+                      <Table className="min-w-[420px]">
                       <TableHeader>
                         <TableRow>
                           <TableHead>{isRTL ? "תאריך ושעה" : "Date & Time"}</TableHead>
@@ -832,7 +839,8 @@ const BarDashboard = () => {
                           </TableRow>
                         ))}
                       </TableBody>
-                    </Table>
+                      </Table>
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -850,7 +858,8 @@ const BarDashboard = () => {
                       {isRTL ? "אין נתונים עדיין." : "No data yet."}
                     </p>
                   ) : (
-                    <Table>
+                    <div className="w-full overflow-x-auto">
+                      <Table className="min-w-[520px]">
                       <TableHeader>
                         <TableRow>
                           <TableHead>{isRTL ? "משחק" : "Game"}</TableHead>
@@ -867,7 +876,8 @@ const BarDashboard = () => {
                           </TableRow>
                         ))}
                       </TableBody>
-                    </Table>
+                      </Table>
+                    </div>
                   )}
                 </CardContent>
               </Card>
