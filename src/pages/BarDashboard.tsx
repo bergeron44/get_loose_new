@@ -432,6 +432,9 @@ const BarDashboard = () => {
             <Button asChild variant="secondary">
               <Link to="/dashboard/register">{isRTL ? "הוסף בר" : "Add Bar"}</Link>
             </Button>
+            <Button asChild variant="outline">
+              <Link to="/questions-dashboard">{isRTL ? "ניהול שאלות" : "Questions"}</Link>
+            </Button>
             <Button variant="outline" onClick={handleLogout}>
               {isRTL ? "התנתק" : "Log out"}
             </Button>

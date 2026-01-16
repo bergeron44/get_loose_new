@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import BarDashboard from "./pages/BarDashboard";
 import BarRegistration from "./pages/BarRegistration";
+import QuestionsDashboard from "./pages/QuestionsDashboard";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,7 @@ const App = () => (
               <Route path="/index.html" element={<Navigate to="/" replace />} />
               <Route path="/dashboard" element={<BarDashboard />} />
               <Route path="/dashboard/register" element={<BarRegistration />} />
+              <Route path="/questions-dashboard" element={<QuestionsDashboard />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
