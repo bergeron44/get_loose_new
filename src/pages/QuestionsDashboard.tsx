@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -67,6 +68,8 @@ const QuestionsDashboard = () => {
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
   const [formState, setFormState] = useState<QuestionFormState>(() => emptyForm(""));
   const [isSaving, setIsSaving] = useState(false);
+  const [ratingValues, setRatingValues] = useState<Record<string, string>>({});
+  const [isRating, setIsRating] = useState<string | null>(null);
 
   const loadGames = useCallback(async () => {
     try {
@@ -125,6 +128,10 @@ const QuestionsDashboard = () => {
         .some((value) => String(value).toLowerCase().includes(needle)),
     );
   }, [questions, searchValue]);
+
+  const ratingQuestions = useMemo(() => {
+    return filteredQuestions.filter((item) => item.question || item.questionEnglish);
+  }, [filteredQuestions]);
 
   const openCreateDialog = () => {
     setIsEditing(false);
@@ -216,6 +223,45 @@ const QuestionsDashboard = () => {
     }
   };
 
+  const handleRate = async (question: QuestionItem) => {
+    const value = Number(ratingValues[question._id]);
+    if (!Number.isFinite(value) || value < 1 || value > 5) {
+      toast({
+        title: isRTL ? "דירוג לא תקין" : "Invalid rating",
+        description: isRTL ? "בחרו דירוג בין 1 ל־5." : "Choose a rating between 1 and 5.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsRating(question._id);
+    try {
+      const response = await fetch(`${API_BASE}/api/questions/${question._id}/rate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rating: value }),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to rate question");
+      }
+      toast({
+        title: isRTL ? "דירוג נשמר" : "Rating saved",
+        description: isRTL ? "תודה על הדירוג!" : "Thanks for rating!",
+      });
+      setRatingValues((prev) => ({ ...prev, [question._id]: "" }));
+      await loadQuestions();
+      await loadGames();
+    } catch (error) {
+      toast({
+        title: isRTL ? "שגיאה" : "Error",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRating(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background px-4 py-10">
       <LanguageToggle />
@@ -269,57 +315,134 @@ const QuestionsDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{isRTL ? "שאלות קיימות" : "Existing Questions"}</CardTitle>
-            <CardDescription>
-              {isRTL ? "לחיצה על עריכה תפתח את הטופס." : "Use edit to update question details."}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <p className="text-sm text-muted-foreground">{isRTL ? "טוען שאלות..." : "Loading questions..."}</p>
-            ) : filteredQuestions.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{isRTL ? "אין שאלות." : "No questions found."}</p>
-            ) : (
-              <div className="w-full overflow-x-auto">
-                <Table className="min-w-[900px]">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{isRTL ? "שאלה" : "Question"}</TableHead>
-                      <TableHead>{isRTL ? "משחק" : "Game"}</TableHead>
-                      <TableHead>{isRTL ? "קטגוריה" : "Category"}</TableHead>
-                      <TableHead>{isRTL ? "קושי" : "Difficulty"}</TableHead>
-                      <TableHead>{isRTL ? "דירוג" : "Rate"}</TableHead>
-                      <TableHead className="text-right">{isRTL ? "פעולות" : "Actions"}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredQuestions.map((item) => (
-                      <TableRow key={item._id}>
-                        <TableCell className="font-medium">
-                          {item.question}
-                          {item.questionEnglish && (
-                            <p className="text-xs text-muted-foreground">{item.questionEnglish}</p>
-                          )}
-                        </TableCell>
-                        <TableCell>{item.game || "-"}</TableCell>
-                        <TableCell>{item.category || "-"}</TableCell>
-                        <TableCell>{item.difficult || "-"}</TableCell>
-                        <TableCell>{typeof item.rate === "number" ? item.rate : "-"}</TableCell>
-                        <TableCell className="text-right">
-                          <Button size="sm" variant="outline" onClick={() => openEditDialog(item)}>
-                            {isRTL ? "עריכה" : "Edit"}
-                          </Button>
-                        </TableCell>
-                      </TableRow>
+        <Tabs defaultValue="manage" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="manage">{isRTL ? "ניהול" : "Manage"}</TabsTrigger>
+            <TabsTrigger value="ratings">{isRTL ? "דירוג" : "Ratings"}</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="manage">
+            <Card>
+              <CardHeader>
+                <CardTitle>{isRTL ? "שאלות קיימות" : "Existing Questions"}</CardTitle>
+                <CardDescription>
+                  {isRTL ? "לחיצה על עריכה תפתח את הטופס." : "Use edit to update question details."}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <p className="text-sm text-muted-foreground">{isRTL ? "טוען שאלות..." : "Loading questions..."}</p>
+                ) : filteredQuestions.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">{isRTL ? "אין שאלות." : "No questions found."}</p>
+                ) : (
+                  <div className="w-full overflow-x-auto">
+                    <Table className="min-w-[900px]">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>{isRTL ? "שאלה" : "Question"}</TableHead>
+                          <TableHead>{isRTL ? "משחק" : "Game"}</TableHead>
+                          <TableHead>{isRTL ? "קטגוריה" : "Category"}</TableHead>
+                          <TableHead>{isRTL ? "קושי" : "Difficulty"}</TableHead>
+                          <TableHead>{isRTL ? "דירוג" : "Rate"}</TableHead>
+                          <TableHead className="text-right">{isRTL ? "פעולות" : "Actions"}</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredQuestions.map((item) => (
+                          <TableRow key={item._id}>
+                            <TableCell className="font-medium">
+                              {item.question}
+                              {item.questionEnglish && (
+                                <p className="text-xs text-muted-foreground">{item.questionEnglish}</p>
+                              )}
+                            </TableCell>
+                            <TableCell>{item.game || "-"}</TableCell>
+                            <TableCell>{item.category || "-"}</TableCell>
+                            <TableCell>{item.difficult || "-"}</TableCell>
+                            <TableCell>{typeof item.rate === "number" ? item.rate.toFixed(2) : "-"}</TableCell>
+                            <TableCell className="text-right">
+                              <Button size="sm" variant="outline" onClick={() => openEditDialog(item)}>
+                                {isRTL ? "עריכה" : "Edit"}
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="ratings">
+            <Card>
+              <CardHeader>
+                <CardTitle>{isRTL ? "דירוג שאלות" : "Rate Questions"}</CardTitle>
+                <CardDescription>
+                  {isRTL
+                    ? "דרגו שאלות 1–5 כדי לשפר את הבנק."
+                    : "Give questions a 1–5 rating to improve the bank."}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <p className="text-sm text-muted-foreground">{isRTL ? "טוען שאלות..." : "Loading questions..."}</p>
+                ) : ratingQuestions.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">{isRTL ? "אין שאלות לדירוג." : "No questions to rate."}</p>
+                ) : (
+                  <div className="space-y-4">
+                    {ratingQuestions.map((item) => (
+                      <Card key={item._id} className="border-dashed">
+                        <CardContent className="flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between">
+                          <div className="space-y-1">
+                            <p className="font-semibold">{item.question}</p>
+                            {item.questionEnglish && (
+                              <p className="text-sm text-muted-foreground">{item.questionEnglish}</p>
+                            )}
+                            <div className="text-xs text-muted-foreground">
+                              {item.game || "-"} · {item.category || (isRTL ? "ללא קטגוריה" : "No category")}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {isRTL ? "דירוג נוכחי" : "Current rate"}:{" "}
+                              {typeof item.rate === "number" ? item.rate.toFixed(2) : "0.00"} ·{" "}
+                              {isRTL ? "כמות מדרגים" : "Votes"}: {item.appearance || 0}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <Select
+                              value={ratingValues[item._id] || ""}
+                              onValueChange={(value) =>
+                                setRatingValues((prev) => ({ ...prev, [item._id]: value }))
+                              }
+                            >
+                              <SelectTrigger className="w-[110px]">
+                                <SelectValue placeholder={isRTL ? "בחר דירוג" : "Select"} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {[1, 2, 3, 4, 5].map((value) => (
+                                  <SelectItem key={value} value={String(value)}>
+                                    {value} ⭐
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              onClick={() => handleRate(item)}
+                              disabled={!ratingValues[item._id] || isRating === item._id}
+                            >
+                              {isRating === item._id ? (isRTL ? "שומר..." : "Saving...") : (isRTL ? "דרג" : "Rate")}
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
                     ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
