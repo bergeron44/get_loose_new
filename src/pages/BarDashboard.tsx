@@ -408,9 +408,6 @@ const BarDashboard = () => {
               >
                 {isLoadingBar ? (isRTL ? "בודק..." : "Checking...") : (isRTL ? "כניסה לדשבורד" : "Access Dashboard")}
               </Button>
-              <Button asChild variant="outline" className="w-full">
-                <Link to="/dashboard/register">{isRTL ? "הוסף בר חדש" : "Add a New Bar"}</Link>
-              </Button>
             </div>
           </CardContent>
         </Card>
@@ -429,12 +426,6 @@ const BarDashboard = () => {
           </div>
           <div className="flex items-center gap-3">
             <Badge variant="secondary">Bar ID: {barId}</Badge>
-            <Button asChild variant="secondary">
-              <Link to="/dashboard/register">{isRTL ? "הוסף בר" : "Add Bar"}</Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link to="/questions-dashboard">{isRTL ? "ניהול שאלות" : "Questions"}</Link>
-            </Button>
             <Button variant="outline" onClick={handleLogout}>
               {isRTL ? "התנתק" : "Log out"}
             </Button>
@@ -777,7 +768,24 @@ const BarDashboard = () => {
           </TabsContent>
 
           <TabsContent value="analytics">
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>{isRTL ? "הוספת בר חדש" : "Add a New Bar"}</CardTitle>
+                  <CardDescription>
+                    {isRTL
+                      ? "כפתור זה מיועד לפתיחת בר חדש והוא לא חלק מתהליך ההתחברות."
+                      : "This button opens the new bar registration flow and is not related to login."}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button asChild>
+                    <Link to="/dashboard/register">{isRTL ? "עבור להרשמה" : "Go to Registration"}</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <div className="grid gap-4 lg:grid-cols-2">
               <Card>
                 <CardHeader>
                   <CardTitle>{isRTL ? "משחקים לפי סוג" : "Games by Type"}</CardTitle>
@@ -884,6 +892,7 @@ const BarDashboard = () => {
                   )}
                 </CardContent>
               </Card>
+              </div>
             </div>
           </TabsContent>
         </Tabs>
