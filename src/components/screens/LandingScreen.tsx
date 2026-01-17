@@ -211,7 +211,7 @@ const LandingScreen: React.FC = () => {
       }} transition={{
         delay: 0.7
       }}>
-          {['8 Games', 'Party Mode', 'Multilingual'].map((feature, index) => <motion.span key={index} className="glass-card px-4 py-2 rounded-full text-sm font-medium text-muted-foreground" initial={{
+          {(isRTL ? ['8 משחקים', 'חבילות שתייה'] : ['8 Games', 'Drink Packages']).map((feature, index) => <motion.span key={index} className="glass-card px-4 py-2 rounded-full text-sm font-medium text-muted-foreground" initial={{
           opacity: 0,
           y: 20
         }} animate={{
