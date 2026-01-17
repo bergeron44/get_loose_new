@@ -24,14 +24,12 @@ const translations: Record<Language, Record<string, string>> = {
     'landing.multilingual': 'Multilingual',
     
     // Games
-    'game.icebreaker': 'Icebreaker',
-    'game.icebreaker.desc': 'Deep questions to connect people',
+    'game.icebreaker': 'No Filter (Date)',
+    'game.icebreaker.desc': 'Date talk without filters',
     'game.guessWho': 'Guess Who',
     'game.guessWho.desc': 'Hold phone to forehead, get clues',
     'game.truthDareShot': 'Truth, Dare or Shot',
     'game.truthDareShot.desc': 'Complete the challenge or drink!',
-    'game.dareOnly': 'Dare Only',
-    'game.dareOnly.desc': 'Only dares - if you\'re not brave enough, drink!',
     'game.trivia': 'Trivia Night',
     'game.trivia.desc': 'Test your knowledge',
     'game.truthOrDare': 'Majority Wins',
@@ -96,14 +94,12 @@ const translations: Record<Language, Record<string, string>> = {
     'landing.multilingual': 'רב-לשוני',
     
     // Games
-    'game.icebreaker': 'שוברי קרח',
-    'game.icebreaker.desc': 'שאלות עמוקות לחיבור בין אנשים',
+    'game.icebreaker': 'בלי פילטר (דייט)',
+    'game.icebreaker.desc': 'שיחת דייט בלי פילטרים',
     'game.guessWho': 'נחש מי',
     'game.guessWho.desc': 'שים על המצח וקבל רמזים',
     'game.truthDareShot': 'אמת, חובה או צ\'ייסר',
     'game.truthDareShot.desc': 'השלם את המשימה או שתה!',
-    'game.dareOnly': 'אמיצים בלבד',
-    'game.dareOnly.desc': 'רק דר - אם אתה לא מספיק אמיץ, שתה!',
     'game.trivia': 'טריוויה',
     'game.trivia.desc': 'בדוק את הידע שלך',
     'game.truthOrDare': 'מלחמת הרוב',

@@ -9,7 +9,6 @@ import {
   Hand, 
   Users, 
   Crown,
-  Zap,
   ArrowLeft 
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -56,15 +55,6 @@ const games: GameCardData[] = [
     gradient: gameThemes.truthDareShot.gradient,
     shadowClass: 'neon-glow-orange',
     emojis: gameThemes.truthDareShot.emojis,
-  },
-  {
-    id: 'dareOnly',
-    titleKey: 'game.dareOnly',
-    descKey: 'game.dareOnly.desc',
-    icon: Zap,
-    gradient: gameThemes.dareOnly.gradient,
-    shadowClass: 'neon-glow-orange',
-    emojis: gameThemes.dareOnly.emojis,
   },
   {
     id: 'trivia',
@@ -128,14 +118,14 @@ const GameSelection: React.FC = () => {
       setCurrentScreen('relationshipSelector');
     } else if (gameId === 'trivia') {
       setCurrentScreen('triviaPartyEntry');
+    } else if (gameId === 'guessWho') {
+      setCurrentScreen('intensity');
     } else if (gameId === 'mostLikely') {
       setCurrentScreen('mostLikelyEntry');
     } else if (gameId === 'kingsCup') {
       setCurrentScreen('kingsDice');
     } else if (gameId === 'truthDareShot') {
       setCurrentScreen('truthDareShot');
-    } else if (gameId === 'dareOnly') {
-      setCurrentScreen('dareOnlyGame');
     } else if (gameId === 'truthOrDare') {
       setCurrentScreen('majorityWinsEntry');
     } else if (gameId === 'neverHaveI') {

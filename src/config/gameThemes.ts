@@ -49,17 +49,6 @@ export const gameThemes: Record<GameType, GameTheme> = {
     shadowVar: '25 95% 53%',
     bgAccent: 'hsl(25 95% 53% / 0.15)',
   },
-  dareOnly: {
-    id: 'dareOnly',
-    name: { en: 'Dare Only', he: 'אמיצים בלבד' },
-    primaryColor: '25 95% 53%', // Fire Orange
-    secondaryColor: '0 84% 60%', // Red
-    gradient: 'from-orange-500 via-red-500 to-rose-500',
-    emojis: ['🔥', '💪', '⚡'],
-    glowClass: 'shadow-[0_0_30px_hsl(25_95%_53%/0.5)]',
-    shadowVar: '25 95% 53%',
-    bgAccent: 'hsl(25 95% 53% / 0.15)',
-  },
   neverHaveI: {
     id: 'neverHaveI',
     name: { en: 'Never Have I Ever', he: 'מעולם לא' },

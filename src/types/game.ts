@@ -7,8 +7,7 @@ export type GameType =
   | 'truthOrDare' 
   | 'neverHaveI' 
   | 'mostLikely' 
-  | 'kingsCup'
-  | 'dareOnly';
+  | 'kingsCup';
 
 export type IntensityLevel = 'noAlcohol' | 'chilled' | 'partyAnimal' | 'extreme';
 
@@ -39,7 +38,6 @@ export type AppScreen =
   | 'mostLikelyMultiplayer'
   | 'kingsDice'
   | 'truthDareShot'
-  | 'dareOnlyGame'
   | 'majorityWinsEntry'
   | 'majorityWinsHost'
   | 'majorityWinsJoin'

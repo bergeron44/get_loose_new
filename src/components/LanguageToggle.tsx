@@ -12,8 +12,8 @@ const LanguageToggle: React.FC = () => {
     setLanguage(language === 'en' ? 'he' : 'en');
   };
 
-  // Hide on gameplay screens or when explicitly hidden
-  if (!showLanguageToggle || currentScreen === 'gameplay' || currentScreen === 'mostLikelyGame') {
+  // Show only on the first screen or when explicitly hidden
+  if (!showLanguageToggle || currentScreen !== 'landing') {
     return null;
   }
 

@@ -42,7 +42,7 @@ const MajorityWinsJoin: React.FC = () => {
       const { data: room, error: roomError } = await supabase
         .from('game_rooms')
         .select('*')
-        .eq('room_code', roomCode)
+        .eq('room_code', roomCode.trim())
         .eq('game_type', 'majorityWins')
         .eq('status', 'waiting')
         .single();

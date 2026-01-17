@@ -62,6 +62,14 @@ const NeverHaveIHost: React.FC = () => {
     };
   }, [roomId]);
 
+  useEffect(() => {
+    if (!roomId) return;
+    const interval = setInterval(() => {
+      fetchPlayers();
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [roomId]);
+
   const createRoom = async () => {
     try {
       // Generate room code

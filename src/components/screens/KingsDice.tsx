@@ -607,6 +607,7 @@ const KingsDice: React.FC = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              onClick={() => setCurrentRule(null)}
             >
               {/* Particle Explosion */}
               {showParticles && (
@@ -630,6 +631,7 @@ const KingsDice: React.FC = () => {
                 animate={{ scale: 1, rotateY: 0, opacity: 1 }}
                 exit={{ scale: 0.7, rotateY: 90, opacity: 0 }}
                 transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+                onClick={(event) => event.stopPropagation()}
               >
                 {/* Rule Icon - Giant with glow */}
                 <motion.div

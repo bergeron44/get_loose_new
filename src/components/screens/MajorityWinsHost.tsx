@@ -66,6 +66,14 @@ const MajorityWinsHost: React.FC = () => {
     };
   }, [roomId]);
 
+  useEffect(() => {
+    if (!roomId) return;
+    const interval = setInterval(() => {
+      fetchPlayers();
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [roomId]);
+
   const proceedToCategory = () => {
     if (!hostNickname.trim()) return;
     setStep('category');

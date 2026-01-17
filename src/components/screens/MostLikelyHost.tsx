@@ -86,6 +86,14 @@ const MostLikelyHost: React.FC = () => {
     };
   }, [roomId, fetchPlayers]);
 
+  useEffect(() => {
+    if (!roomId) return;
+    const interval = setInterval(() => {
+      fetchPlayers();
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [roomId]);
+
   const createRoom = async () => {
     if (!hostNickname.trim()) return;
     

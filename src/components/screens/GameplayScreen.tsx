@@ -9,15 +9,15 @@ import {
   ChevronRight,
   Check,
   X,
-  Timer,
   HelpCircle
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useGame } from '@/contexts/GameContext';
-import { getGameCards, GameCard } from '@/data/gameData';
+import { getGameCards, GameCard, guessWhoCards as localGuessWhoCards } from '@/data/gameData';
 import { Button } from '@/components/ui/button';
 import { getGameTheme } from '@/config/gameThemes';
 import AutoDismissInstructions from '@/components/AutoDismissInstructions';
+import type { IntensityLevel } from '@/types/game';
 import {
   Dialog,
   DialogContent,
@@ -40,10 +40,9 @@ const gameInstructions: Record<string, { titleEn: string; titleHe: string; steps
     titleEn: 'Guess Who',
     titleHe: 'נחשו מי',
     steps: [
-      { icon: '📱', en: 'Put phone on forehead', he: 'שימו טלפון על המצח' },
-      { icon: '⏱️', en: 'You have 60 seconds!', he: 'יש לכם 60 שניות!' },
-      { icon: '👥', en: 'Friends give you clues', he: 'חברים נותנים רמזים' },
-      { icon: '👎', en: "Time's up? Drink!", he: 'נגמר הזמן? שותים!' },
+      { icon: '📱', en: 'Rotate phone & show character for 10s', he: 'סובבו טלפון והציגו דמות ל-10 שניות' },
+      { icon: '❓', en: 'Ask up to 20 questions', he: 'שאלו עד 20 שאלות' },
+      { icon: '🥃', en: 'Missed it? Take a shot!', he: 'לא ניחשתם? שוט!' },
     ],
   },
   doOrDrink: {
@@ -117,41 +116,182 @@ const GameplayScreen: React.FC = () => {
   const [direction, setDirection] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
-  const [timer, setTimer] = useState<number | null>(null);
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [showAutoInstructions, setShowAutoInstructions] = useState(true);
+  const [guessWhoPhase, setGuessWhoPhase] = useState<'reveal' | 'questions'>('reveal');
+  const [guessWhoCountdown, setGuessWhoCountdown] = useState(10);
+  const [remoteGuessWhoCards, setRemoteGuessWhoCards] = useState<
+    Array<{ id: string; text: string; textHe?: string; difficulty?: string }>
+  >([]);
+  const [remoteIcebreakerCards, setRemoteIcebreakerCards] = useState<
+    Array<{ id: string; text: string; textHe?: string; category?: string; difficulty?: string }>
+  >([]);
 
   // Get theme for current game
   const theme = getGameTheme(selectedGame);
 
+  const API_BASE = import.meta.env.VITE_SUPABASE_URL || '';
+
+  const shuffleCards = <T,>(array: T[]): T[] => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
+  const difficultyMatchesIntensity = (difficulty: string | undefined) => {
+    const normalized = (difficulty || '').toLowerCase().trim();
+    const intensityMap: Record<string, IntensityLevel[]> = {
+      easy: ['noAlcohol'],
+      medium: ['chilled'],
+      hard: ['partyAnimal', 'extreme'],
+    };
+    if (!normalized) return true;
+    return intensityMap[normalized]?.includes(intensity) ?? false;
+  };
+
+  const dateDifficultyMatchesIntensity = (difficulty: string | undefined) => {
+    const normalized = (difficulty || '').toLowerCase().trim();
+    const intensityMap: Record<string, IntensityLevel[]> = {
+      easy: ['noAlcohol'],
+      medium: ['chilled'],
+      hard: ['partyAnimal'],
+    };
+    if (!normalized) return true;
+    return intensityMap[normalized]?.includes(intensity) ?? false;
+  };
+
   // Load cards when game starts
   useEffect(() => {
     if (selectedGame) {
-      const gameCards = getGameCards(selectedGame, intensity);
+      let gameCards = getGameCards(selectedGame, intensity);
+
+      if (selectedGame === 'guessWho') {
+        gameCards = shuffleCards([
+          ...localGuessWhoCards,
+          ...remoteGuessWhoCards
+            .filter((item) => difficultyMatchesIntensity(item.difficulty))
+            .map((item) => ({
+              id: item.id,
+              text: item.text,
+              textHe: item.textHe,
+              type: 'action' as const,
+            })),
+        ]);
+      }
+
+      if (selectedGame === 'icebreaker') {
+        const localCards = intensity === 'partyAnimal'
+          ? [...gameCards, ...getGameCards('icebreaker', 'extreme')]
+          : gameCards;
+        const dbCards = remoteIcebreakerCards
+          .filter((item) => dateDifficultyMatchesIntensity(item.difficulty))
+          .map((item) => ({
+            id: item.id,
+            text: item.text,
+            textHe: item.textHe,
+            category: item.category,
+            type: 'question' as const,
+          }));
+        gameCards = shuffleCards([...localCards, ...dbCards]);
+      }
+
       setCards(gameCards);
       setCurrentCardIndex(0);
       setShowAutoInstructions(true); // Show instructions for new game
     }
-  }, [selectedGame, intensity, setCurrentCardIndex]);
+  }, [
+    selectedGame,
+    intensity,
+    remoteGuessWhoCards,
+    remoteIcebreakerCards,
+    setCurrentCardIndex,
+  ]);
 
-  // Timer logic
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isTimerRunning && timer !== null && timer > 0) {
-      interval = setInterval(() => {
-        setTimer(prev => {
-          if (prev === null || prev <= 1) {
-            setIsTimerRunning(false);
-            triggerPenalty();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+    if (selectedGame !== 'guessWho') return;
+
+    let isActive = true;
+    const loadGuessWho = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/api/questions/game/Guess-What-I-Am`);
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!Array.isArray(data) || !isActive) return;
+        const mapped = data
+          .filter((item) => item?.question || item?.questionEnglish)
+          .map((item) => ({
+            id: item._id || item.id || Math.random().toString(),
+            text: item.questionEnglish || item.question || '',
+            textHe: item.question || item.questionEnglish || '',
+            difficulty: item.difficult,
+          }));
+        if (mapped.length) {
+          setRemoteGuessWhoCards(mapped);
+        }
+      } catch (error) {
+        console.error('Failed to load Guess Who characters', error);
+      }
+    };
+
+    loadGuessWho();
+    return () => {
+      isActive = false;
+    };
+  }, [API_BASE, selectedGame]);
+
+  useEffect(() => {
+    if (selectedGame !== 'icebreaker') return;
+
+    let isActive = true;
+    const loadIcebreaker = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/api/questions/game/Date`);
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!Array.isArray(data) || !isActive) return;
+        const mapped = data
+          .filter((item) => item?.question || item?.questionEnglish)
+          .map((item) => ({
+            id: item._id || item.id || Math.random().toString(),
+            text: item.questionEnglish || item.question || '',
+            textHe: item.question || item.questionEnglish || '',
+            category: item.category || undefined,
+            difficulty: item.difficult,
+          }));
+        if (mapped.length) {
+          setRemoteIcebreakerCards(mapped);
+        }
+      } catch (error) {
+        console.error('Failed to load Date questions', error);
+      }
+    };
+
+    loadIcebreaker();
+    return () => {
+      isActive = false;
+    };
+  }, [API_BASE, selectedGame]);
+
+  useEffect(() => {
+    if (selectedGame !== 'guessWho') return;
+    setGuessWhoPhase('reveal');
+    setGuessWhoCountdown(10);
+  }, [selectedGame, currentCardIndex]);
+
+  useEffect(() => {
+    if (selectedGame !== 'guessWho' || guessWhoPhase !== 'reveal') return;
+    if (guessWhoCountdown <= 0) {
+      setGuessWhoPhase('questions');
+      return;
     }
-    return () => clearInterval(interval);
-  }, [isTimerRunning, timer, triggerPenalty]);
+    const interval = setTimeout(() => {
+      setGuessWhoCountdown((prev) => prev - 1);
+    }, 1000);
+    return () => clearTimeout(interval);
+  }, [guessWhoCountdown, guessWhoPhase, selectedGame]);
 
   const currentCard = cards[currentCardIndex];
 
@@ -161,8 +301,6 @@ const GameplayScreen: React.FC = () => {
       setCurrentCardIndex(currentCardIndex + 1);
       setSelectedAnswer(null);
       setShowResult(false);
-      setTimer(null);
-      setIsTimerRunning(false);
     }
   }, [currentCardIndex, cards.length, setCurrentCardIndex]);
 
@@ -172,8 +310,6 @@ const GameplayScreen: React.FC = () => {
       setCurrentCardIndex(currentCardIndex - 1);
       setSelectedAnswer(null);
       setShowResult(false);
-      setTimer(null);
-      setIsTimerRunning(false);
     }
   }, [currentCardIndex, setCurrentCardIndex]);
 
@@ -204,12 +340,13 @@ const GameplayScreen: React.FC = () => {
     }
   };
 
-  // Start timer for Guess Who
-  const handleStartTimer = () => {
-    if (currentCard?.timer) {
-      setTimer(currentCard.timer);
-      setIsTimerRunning(true);
-    }
+  const handleGuessWhoSuccess = () => {
+    handleNext();
+  };
+
+  const handleGuessWhoFail = () => {
+    triggerPenalty();
+    handleNext();
   };
 
   // Handle drink button for various games
@@ -319,58 +456,78 @@ const GameplayScreen: React.FC = () => {
       );
     }
 
-    // Special rendering for Guess Who with timer
+    // Special rendering for Guess Who
     if (selectedGame === 'guessWho') {
       return (
         <div className="flex flex-col items-center justify-center h-full text-center">
-          {timer === null ? (
+          {guessWhoPhase === 'reveal' ? (
             <>
-              <p className="text-muted-foreground mb-4">Put phone on forehead</p>
+              <p className="text-muted-foreground mb-4">
+                {isRTL ? 'סובבו את הטלפון' : 'Rotate the phone'}
+              </p>
               <h3 className="text-3xl md:text-4xl font-black text-foreground mb-8">
-                {currentCard.text}
+                {isRTL ? currentCard.textHe || currentCard.text : currentCard.text}
               </h3>
-              <Button variant="neonPurple" size="lg" onClick={handleStartTimer}>
-                <Timer className="w-5 h-5 mr-2" />
-                Start Timer (60s)
-              </Button>
+              <div className="text-6xl font-black text-foreground mb-2">{guessWhoCountdown}</div>
+              <p className="text-muted-foreground">
+                {isRTL ? '10 שניות לחשוף את הדמות' : '10 seconds to reveal the character'}
+              </p>
             </>
           ) : (
             <>
-              <motion.div
-                className="text-8xl font-black mb-4"
-                style={{ color: theme ? `hsl(${theme.primaryColor})` : 'hsl(var(--primary))' }}
-                animate={{ scale: timer <= 10 ? [1, 1.1, 1] : 1 }}
-                transition={{ duration: 0.5, repeat: timer <= 10 ? Infinity : 0 }}
-              >
-                {timer}
-              </motion.div>
-              <p className="text-muted-foreground mb-8">seconds remaining</p>
+              <p className="text-lg font-bold mb-2">
+                {isRTL ? 'יש לכם 20 שאלות לנחש' : 'You have 20 questions to guess'}
+              </p>
+              <p className="text-muted-foreground mb-8">
+                {isRTL ? 'לא הצלחתם? שוט' : "Didn't guess? Take a shot"}
+              </p>
               <div className="flex gap-4">
                 <Button
                   variant="neonLime"
-                  onClick={() => {
-                    setIsTimerRunning(false);
-                    setTimer(null);
-                    handleNext();
-                  }}
+                  onClick={handleGuessWhoSuccess}
                 >
                   <Check className="w-5 h-5 mr-2" />
-                  Got it!
+                  {isRTL ? 'ניחשנו' : 'Got it'}
                 </Button>
                 <Button
                   variant="neonOrange"
-                  onClick={() => {
-                    setIsTimerRunning(false);
-                    triggerPenalty();
-                    handleNext();
-                  }}
+                  onClick={handleGuessWhoFail}
                 >
                   <X className="w-5 h-5 mr-2" />
-                  Skip
+                  {isRTL ? 'לא ניחשנו - שוט' : 'Missed it - Shot'}
                 </Button>
               </div>
             </>
           )}
+        </div>
+      );
+    }
+
+    // Special rendering for Icebreaker (No Filter Date)
+    if (selectedGame === 'icebreaker') {
+      return (
+        <div className="flex flex-col items-center justify-center h-full text-center">
+          {currentCard.category && (
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+              {currentCard.category}
+            </span>
+          )}
+          <h3 className="text-2xl md:text-3xl font-bold text-foreground">
+            {isRTL ? currentCard.textHe || currentCard.text : currentCard.text}
+          </h3>
+          <div className="mt-8 flex flex-col gap-3 w-full max-w-xs">
+            <Button
+              variant="neonOrange"
+              size="lg"
+              className="mt-3"
+              onClick={() => {
+                handleDrink();
+                handleNext();
+              }}
+            >
+              {isRTL ? 'שתה' : 'Drink'} 🍺
+            </Button>
+          </div>
         </div>
       );
     }

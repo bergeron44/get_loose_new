@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Heart, Sparkles, HeartHandshake, Crown } from 'lucide-react';
+import { ArrowLeft, Heart, Sparkles, Flame } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useGame } from '@/contexts/GameContext';
 import type { RelationshipLevel } from '@/types/game';
@@ -28,7 +28,7 @@ const relationshipOptions: RelationshipOption[] = [
   {
     id: 'fewMonths',
     icon: <Heart className="w-8 h-8" />,
-    titleEn: 'Moving Forward',
+    titleEn: 'Getting Serious',
     titleHe: 'מתקדמים',
     descriptionEn: 'Deeper questions, spicier dares',
     descriptionHe: 'שאלות עמוקות יותר, אתגרים פיקנטיים',
@@ -36,31 +36,29 @@ const relationshipOptions: RelationshipOption[] = [
   },
   {
     id: 'longTerm',
-    icon: <HeartHandshake className="w-8 h-8" />,
-    titleEn: 'Long-Term',
-    titleHe: 'זוגיות ארוכה',
-    descriptionEn: '"How well do you know me?" fun',
-    descriptionHe: '"כמה טוב אתה מכיר אותי?" כיף',
+    icon: <Flame className="w-8 h-8" />,
+    titleEn: 'Brave',
+    titleHe: 'אמיצים',
+    descriptionEn: 'No-filter questions for the bold',
+    descriptionHe: 'שאלות בלי פילטר לאמיצים',
     gradient: 'from-amber-500 to-orange-500',
-  },
-  {
-    id: 'married',
-    icon: <Crown className="w-8 h-8" />,
-    titleEn: 'Old Souls',
-    titleHe: 'נשמות ותיקות',
-    descriptionEn: 'Old couple humor & deep bonds',
-    descriptionHe: 'הומור של זוג ותיק וקשרים עמוקים',
-    gradient: 'from-emerald-500 to-teal-500',
   },
 ];
 
 const RelationshipSelector: React.FC = () => {
   const { language } = useLanguage();
-  const { setCurrentScreen, setRelationshipLevel } = useGame();
+  const { setCurrentScreen, setRelationshipLevel, setIntensity } = useGame();
   const isRTL = language === 'he';
 
   const handleSelect = (level: RelationshipLevel) => {
     setRelationshipLevel(level);
+    if (level === 'firstDate') {
+      setIntensity('noAlcohol');
+    } else if (level === 'fewMonths') {
+      setIntensity('chilled');
+    } else {
+      setIntensity('partyAnimal');
+    }
     setCurrentScreen('gameplay');
   };
 

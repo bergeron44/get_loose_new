@@ -21,7 +21,6 @@ import MostLikelyJoin from "@/components/screens/MostLikelyJoin";
 import MostLikelyMultiplayer from "@/components/screens/MostLikelyMultiplayer";
 import KingsDice from "@/components/screens/KingsDice";
 import TruthDareShot from "@/components/screens/TruthDareShot";
-import DareOnlyGame from "@/components/screens/DareOnlyGame";
 import MajorityWinsEntry from "@/components/screens/MajorityWinsEntry";
 import MajorityWinsHost from "@/components/screens/MajorityWinsHost";
 import MajorityWinsJoin from "@/components/screens/MajorityWinsJoin";
@@ -77,8 +76,6 @@ const Index = () => {
         return <KingsDice />;
       case 'truthDareShot':
         return <TruthDareShot />;
-      case 'dareOnlyGame':
-        return <DareOnlyGame />;
       case 'majorityWinsEntry':
         return <MajorityWinsEntry />;
       case 'majorityWinsHost':

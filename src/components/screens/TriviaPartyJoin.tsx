@@ -42,12 +42,14 @@ const TriviaPartyJoin: React.FC = () => {
     setIsJoining(true);
     try {
       // Find room
+      const nowIso = new Date().toISOString();
       const { data: room, error } = await supabase
         .from('game_rooms')
         .select('*')
-        .eq('room_code', roomCode.toUpperCase())
+        .eq('room_code', roomCode.trim())
+        .eq('game_type', 'trivia')
         .eq('status', 'waiting')
-        .gt('expires_at', new Date().toISOString())
+        .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
         .single();
 
       if (error || !room) {

@@ -18,9 +18,7 @@ interface TDSCard {
 
 // Penalties when user escapes
 const drinkPenalties = [
-  { text: 'One Sip', textHe: 'שלוק אחד', emoji: '🍺' },
-  { text: 'Half a Glass', textHe: 'חצי כוס', emoji: '🍻' },
-  { text: 'A Clean Shot!', textHe: 'צ\'ייסר נקי!', emoji: '🥃' },
+  { text: 'Drink!', textHe: 'שתה!', emoji: '🍺' },
 ];
 
 // Game content by level
@@ -82,6 +80,7 @@ const TruthDareShot: React.FC = () => {
   const { language } = useLanguage();
   const isRTL = language === 'he';
   const { setCurrentScreen, resetGame } = useGame();
+  const API_BASE = import.meta.env.VITE_SUPABASE_URL || '';
 
   // Game state
   const [phase, setPhase] = useState<'levelSelect' | 'playing'>('levelSelect');
@@ -92,6 +91,11 @@ const TruthDareShot: React.FC = () => {
   const [currentPenalty, setCurrentPenalty] = useState<typeof drinkPenalties[0] | null>(null);
   const [direction, setDirection] = useState(0);
   const [isShaking, setIsShaking] = useState(false);
+  const [remoteCards, setRemoteCards] = useState<Record<GameLevel, TDSCard[]>>({
+    soft: [],
+    wild: [],
+    extreme: [],
+  });
 
   // Shuffle array helper
   const shuffleArray = <T,>(array: T[]): T[] => {
@@ -103,6 +107,46 @@ const TruthDareShot: React.FC = () => {
     return shuffled;
   };
 
+  const normalizeType = (category: string | undefined): CardType => {
+    const normalized = (category || '').toLowerCase().trim();
+    if (normalized === 'dare') return 'dare';
+    return 'truth';
+  };
+
+  const mapDifficultyToLevel = (difficulty: string | undefined): GameLevel => {
+    const normalized = (difficulty || '').toLowerCase().trim();
+    if (normalized === 'easy') return 'soft';
+    if (normalized === 'medium') return 'wild';
+    return 'extreme';
+  };
+
+  const loadRemoteQuestions = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_BASE}/api/questions/game/Friends`);
+      if (!response.ok) {
+        throw new Error('Failed to load friends questions');
+      }
+      const data = await response.json();
+      if (!Array.isArray(data)) return;
+
+      const grouped: Record<GameLevel, TDSCard[]> = { soft: [], wild: [], extreme: [] };
+      data.forEach((item: any) => {
+        if (!item?.question && !item?.questionEnglish) return;
+        const level = mapDifficultyToLevel(item.difficult);
+        grouped[level].push({
+          id: item._id || item.id || Math.random().toString(),
+          type: normalizeType(item.category),
+          text: item.questionEnglish || item.question || '',
+          textHe: item.question || item.questionEnglish || '',
+        });
+      });
+
+      setRemoteCards(grouped);
+    } catch (error) {
+      console.error('Failed to load Friends questions:', error);
+    }
+  }, [API_BASE]);
+
   // Haptic feedback
   const triggerHaptic = (type: 'light' | 'heavy' = 'light') => {
     if ('vibrate' in navigator) {
@@ -113,7 +157,10 @@ const TruthDareShot: React.FC = () => {
   // Start game with selected level
   const handleLevelSelect = (level: GameLevel) => {
     setSelectedLevel(level);
-    const levelCards = shuffleArray(gameContent[level]);
+    const levelCards = shuffleArray([
+      ...gameContent[level],
+      ...(remoteCards[level] || []),
+    ]);
     setCards(levelCards);
     setCurrentIndex(0);
     setPhase('playing');
@@ -158,7 +205,10 @@ const TruthDareShot: React.FC = () => {
   // Restart game
   const handleRestart = () => {
     if (selectedLevel) {
-      const levelCards = shuffleArray(gameContent[selectedLevel]);
+      const levelCards = shuffleArray([
+        ...gameContent[selectedLevel],
+        ...(remoteCards[selectedLevel] || []),
+      ]);
       setCards(levelCards);
       setCurrentIndex(0);
     }
@@ -176,6 +226,20 @@ const TruthDareShot: React.FC = () => {
   const handleExit = () => {
     setCurrentScreen('gameSelection');
   };
+
+  useEffect(() => {
+    loadRemoteQuestions();
+  }, [loadRemoteQuestions]);
+
+  useEffect(() => {
+    if (phase !== 'playing' || !selectedLevel) return;
+    const levelCards = shuffleArray([
+      ...gameContent[selectedLevel],
+      ...(remoteCards[selectedLevel] || []),
+    ]);
+    setCards(levelCards);
+    setCurrentIndex(0);
+  }, [phase, remoteCards, selectedLevel]);
 
   const currentCard = cards[currentIndex];
 
@@ -369,6 +433,12 @@ const TruthDareShot: React.FC = () => {
             className="p-3 rounded-xl glass-card hover:bg-muted/50 transition-colors"
           >
             <RotateCcw className="w-5 h-5 text-foreground" />
+          </button>
+          <button
+            onClick={() => resetGame()}
+            className="p-3 rounded-xl glass-card hover:bg-muted/50 transition-colors"
+          >
+            <Home className="w-5 h-5 text-foreground" />
           </button>
         </div>
       </motion.div>

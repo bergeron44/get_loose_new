@@ -42,7 +42,7 @@ const NeverHaveIJoin: React.FC = () => {
       const { data: room, error } = await supabase
         .from('game_rooms')
         .select('*')
-        .eq('room_code', roomCode.toUpperCase())
+        .eq('room_code', roomCode.trim())
         .eq('game_type', 'neverHaveI')
         .eq('status', 'waiting')
         .maybeSingle();
